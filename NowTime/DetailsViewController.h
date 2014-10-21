@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "MomentObject.h"
 #import "UploadViewController.h"
+#import "MainViewController.h"
 #import <Social/Social.h>
 
 @class MomentObject;

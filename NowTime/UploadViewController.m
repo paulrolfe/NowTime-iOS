@@ -17,7 +17,7 @@
 @synthesize headlineField, imageUploadButton, textView, uploadButton, uploadedImage;
 
 UIView *firstResponder;
-CGRect originalTextViewFrame;
+CGRect originalFrame;
 
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -38,6 +38,9 @@ CGRect originalTextViewFrame;
     textView.layer.cornerRadius=8;
     imageUploadButton.layer.cornerRadius=8;
     uploadedImage.contentMode=UIViewContentModeScaleAspectFit;
+
+}
+-(void)viewWillAppear:(BOOL)animated{
     
     // Register notifications for when the keyboard appears
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
@@ -53,9 +56,20 @@ CGRect originalTextViewFrame;
 -(void)textFieldDidBeginEditing:(UITextField *)textField{
     firstResponder=textField;
 }
+-(void)textFieldDidEndEditing:(UITextField *)textField{
+    firstResponder=nil;
+}
 -(void)textViewDidBeginEditing:(UITextView *)textViewInstance{
     firstResponder=textViewInstance;
 }
+-(BOOL)textFieldShouldReturn:(UITextField *)textField{
+    if (textField==headlineField){
+        [headlineField resignFirstResponder];
+        [self imageUploadAction:nil];
+    }
+    return YES;
+}
+
 
 /*
 #pragma mark - Navigation
@@ -79,24 +93,48 @@ CGRect originalTextViewFrame;
         PFFile *userImageFile = [PFFile fileWithData:imageData];
         [newMedia setObject:userImageFile forKey:@"image"];
         
+        UIActivityIndicatorView * waiting = [[UIActivityIndicatorView alloc] initWithFrame:CGRectMake(self.view.frame.size.width/2-50, self.view.frame.size.height/2, 100, 100)];
+        waiting.tag=3;
+        waiting.activityIndicatorViewStyle=UIActivityIndicatorViewStyleGray;
+        [waiting startAnimating];
+        [self.view addSubview:waiting];
+        
+        //first save the media
         [newMedia saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
             if (succeeded){
+                
+                //then save the moment with the media as a relation.
                 PFObject * newMoment = [PFObject objectWithClassName:@"Moment"];
                 PFRelation * mediaRelation = [newMoment relationForKey:@"mediaObjects"];
                 [mediaRelation addObject:newMedia];
                 newMoment[@"headline"]=headlineField.text;
                 
-                [newMoment saveInBackground];
+                [newMoment saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
+                    if (!error){
+                        //Set up the MainViewController to display this new moment as the current moment.
+                        MomentObject * justUploaded = [[MomentObject alloc] initWithObject:newMoment];
+                        [(MainViewController *)self.mainViewController setCurrentMoment:justUploaded];
+                        [self backAction:nil];
+                    }
+                    else{
+                        NSLog(@"Error");
+                        [[self.view viewWithTag:3] removeFromSuperview];
+                        [self backAction:nil];
+                        UIAlertView * errorView = [[UIAlertView alloc] initWithTitle:@"Error" message:@"Your moment is stuck in cyber space. Give it another try." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
+                        [errorView show];
+                    }
+                }];
+                NSLog(@"SAVED THAT NEW MOMENT");
             }
             else{
                 NSLog(@"Error");
+                [[self.view viewWithTag:3] removeFromSuperview];
+                [self backAction:nil];
+                UIAlertView * errorView = [[UIAlertView alloc] initWithTitle:@"Error" message:@"Your moment is stuck in cyber space. Give it another try." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
+                [errorView show];
             }
         }];
         
-
-
-        
-        [self backAction:nil];
     }
     else{
         UIAlertView * needsURL = [[UIAlertView alloc] initWithTitle:@"Empty Fields" message:@"Please enter a headline, image and some text to share." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
@@ -105,7 +143,8 @@ CGRect originalTextViewFrame;
     
 }
 - (IBAction)backAction:(id)sender {
-    [firstResponder resignFirstResponder];
+    if (firstResponder)
+        [firstResponder resignFirstResponder];
     [self.navigationController popViewControllerAnimated:YES];
 }
 - (IBAction)imageUploadAction:(id)sender{
@@ -149,7 +188,8 @@ CGRect originalTextViewFrame;
     return newImage;
 }
 - (IBAction)dismissKeyboard:(id)sender {
-    [firstResponder resignFirstResponder];
+    if (firstResponder)
+        [firstResponder resignFirstResponder];
 }
 
 //keyboard handlers from http://astralbodies.net/blog/2012/02/01/resizing-a-uitextview-automatically-with-the-keyboard/
@@ -166,6 +206,9 @@ CGRect originalTextViewFrame;
     
 }
 - (void)moveTextViewForKeyboard:(NSNotification*)notification up:(BOOL)up {
+    if (firstResponder!=headlineField)
+        firstResponder=textView;
+    
     NSDictionary *userInfo = [notification userInfo];
     NSTimeInterval animationDuration;
     UIViewAnimationCurve animationCurve;
@@ -176,23 +219,24 @@ CGRect originalTextViewFrame;
     keyboardRect = [[userInfo objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
     keyboardRect = [self.view convertRect:keyboardRect fromView:nil];
     
-    CGFloat desiredRectOrigin = 200;
+    CGFloat desiredRectOrigin = keyboardRect.origin.y;
     
     [UIView beginAnimations:@"ResizeForKeyboard" context:nil];
     [UIView setAnimationDuration:animationDuration];
     [UIView setAnimationCurve:animationCurve];
     
     if (up == YES) {
-        CGRect newTextViewFrame = self.view.frame;
+        CGRect newFrame = self.view.frame;
+        originalFrame=self.view.frame;
         
         if (firstResponder.frame.origin.y+firstResponder.frame.size.height>desiredRectOrigin){//something that says whether the textfield is below the keyboard.
-            newTextViewFrame.origin.y = -((keyboardRect.origin.y-desiredRectOrigin)+(firstResponder.frame.origin.y - keyboardRect.origin.y));//keyboard.origin.y-desiredlocation.origin.y+(oldvieworigin.y-keyboardorigin.y)
-            [self.view setFrame:newTextViewFrame];
+            newFrame.origin.y = -((firstResponder.frame.origin.y+firstResponder.frame.size.height)-desiredRectOrigin);
+            [self.view setFrame:newFrame];
         }
     } else {
         
         // Keyboard is going away (down) - restore original frame
-        [self.view setFrame:originalTextViewFrame];
+        [self.view setFrame:originalFrame];
     }
     
     [UIView commitAnimations];

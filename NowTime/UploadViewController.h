@@ -8,6 +8,9 @@
 
 #import <UIKit/UIKit.h>
 #import <Parse/Parse.h>
+#import "MainViewController.h"
+#import "MomentObject.h"
+
 
 @interface UploadViewController : UIViewController <UITextFieldDelegate, UITextViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 
@@ -21,6 +24,9 @@
 @property (weak, nonatomic) IBOutlet UITextView *textView;
 - (IBAction)dismissKeyboard:(id)sender;
 @property (weak, nonatomic) IBOutlet UIImageView *uploadedImage;
+
+@property UIViewController * mainViewController;
+
 
 
 @end

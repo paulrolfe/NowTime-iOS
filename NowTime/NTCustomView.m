@@ -26,6 +26,7 @@
 }
 -(void) addGestures{
     tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureHappened:)];
+    //[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureHappened:)];
     UIPanGestureRecognizer * pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
     pan.delegate=self;
     tap.delegate=self;
@@ -37,6 +38,7 @@
     return YES;
 }
 -(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer{
+    //Uncomment below to enable tap gesture.
     /*if (gestureRecognizer==tap)
         return YES;
     else*/
@@ -62,6 +64,7 @@
         grabAnchor = translation;
         oldframe = self.webview.frame;
     }
+    //move the view when the gesture is changing.
     else if (gestureRecognizer.state==UIGestureRecognizerStateChanged){
         newframe.origin.x = translation.x - grabAnchor.x;
         newframe.origin.y = translation.y - grabAnchor.y;
@@ -74,24 +77,29 @@
         
         lastViewPosition=newframe.origin;
     }
+    //when the gesture ends... send the webview flying... or don't if it hasn't moved enough.
     else if (gestureRecognizer.state==UIGestureRecognizerStateEnded){
         if (grabAnchor.x>translation.x+80){//Next
             [self fadeawayWebView:self.webview toNext:YES];
         }
-        else if (grabAnchor.x<translation.x-80 && self.backAllowed){//Last
-            [self fadeawayWebView:self.webview toNext:NO];
+        else if (grabAnchor.x<translation.x-80){//Last
+            if (self.backAllowed)
+                [self fadeawayWebView:self.webview toNext:NO];
+            else{
+                [UIView animateWithDuration:.2 delay:0 options:0 animations:^{
+                    // Animate the alpha value of your imageView from 1.0 to 0.0 here
+                    self.webview.frame = oldframe;
+                } completion:^(BOOL finished) {
+                    UIAlertView * noGo = [[UIAlertView alloc] initWithTitle:@"We're jerks" message:@"You can only go back one Moment. But that's ok, don't dwell in the past, on to the next one!" delegate:nil cancelButtonTitle:@"Yes, onward!" otherButtonTitles: nil];
+                    [noGo show];
+                }];
+            }
         }
         else{//Return
             [UIView animateWithDuration:.2 delay:0 options:0 animations:^{
                 // Animate the alpha value of your imageView from 1.0 to 0.0 here
                 self.webview.frame = oldframe;
-
             } completion:^(BOOL finished) {
-                //Show a popup that you can only go back once.
-                if (!self.backAllowed){
-                    UIAlertView * noGo = [[UIAlertView alloc] initWithTitle:@"We're jerks" message:@"You can only go back one Moment. But that's ok, don't dwell in the past, on to the next one!" delegate:nil cancelButtonTitle:@"Yes, onward!" otherButtonTitles: nil];
-                    [noGo show];
-                }
                 
             }];
         }

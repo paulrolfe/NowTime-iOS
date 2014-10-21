@@ -10,14 +10,14 @@
 	<string>NowTime</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>67E92B72BD8B6238AFCCCB3A652E24837FABE818</key>
+		<key>49DFC244E2D3D3FD4ABD8A50CEF60BBC5CDB6F7F</key>
 		<string>https://github.com/paulrolfe/NowTime-iOS.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>NowTime.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>67E92B72BD8B6238AFCCCB3A652E24837FABE818</key>
+		<key>49DFC244E2D3D3FD4ABD8A50CEF60BBC5CDB6F7F</key>
 		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
@@ -25,14 +25,14 @@
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>67E92B72BD8B6238AFCCCB3A652E24837FABE818</string>
+	<string>49DFC244E2D3D3FD4ABD8A50CEF60BBC5CDB6F7F</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>67E92B72BD8B6238AFCCCB3A652E24837FABE818</string>
+			<string>49DFC244E2D3D3FD4ABD8A50CEF60BBC5CDB6F7F</string>
 			<key>IDESourceControlWCCName</key>
 			<string>NowTime-iOS</string>
 		</dict>

@@ -31,6 +31,9 @@
     self.window.tintColor=[UIColor blackColor];
     
     // Register for push notifications
+    //iOS8
+    //[application registerForRemoteNotifications];
+    //iOS7 and earlier
     [application registerForRemoteNotificationTypes: UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeBadge];
     
     return YES;

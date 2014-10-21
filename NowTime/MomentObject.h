@@ -26,8 +26,8 @@
 @property float secondsViewed;
 @property int loadingCount;
 
--(id) fetchNewObjectWithSkip:(NSNumber *)skip;
--(void)nextURLrequestWithSkip:(NSNumber *)skip;
+-(id) fetchNewObject;
+-(id) initWithObject:(PFObject *)object;
 -(void) startTimer;
 -(void) pauseTimer;
 -(void) sendFeedback;

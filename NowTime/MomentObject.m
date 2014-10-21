@@ -10,7 +10,7 @@
 
 @implementation MomentObject
 
--(id) fetchNewObjectWithSkip:(NSNumber *)skip{
+-(id) fetchNewObject{
     //makes a request to parse to get the next object for this usersession.
     self.momentWebView = [[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, 2000)];
     self.loadingCount=0;
@@ -21,38 +21,58 @@
     [self.momentWebView setSuppressesIncrementalRendering:NO];
     self.momentWebView.scalesPageToFit=YES;
     self.momentWebView.contentMode=UIViewContentModeScaleAspectFit;
-    [self nextURLrequestWithSkip:skip];
+    [self grabAnyUrl];
+    self.actionsTaken = [[NSMutableArray alloc] initWithArray:@[]];
+    return self;
+}
+- (id) initWithObject:(PFObject *)object{
+    self.momentWebView = [[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, 2000)];
+    self.loadingCount=0;
+    self.momentWebView.layer.shadowOpacity=.5;
+    self.momentWebView.layer.shadowRadius=10;
+    self.momentWebView.delegate=self;
+    self.momentWebView.dataDetectorTypes = UIDataDetectorTypeNone;
+    [self.momentWebView setSuppressesIncrementalRendering:NO];
+    self.momentWebView.scalesPageToFit=YES;
+    self.momentWebView.contentMode=UIViewContentModeScaleAspectFit;
+    NSString * urlstring = [NSString stringWithFormat:@"http://nowtime.parseapp.com/%@",object.objectId];
+    self.pfObject=object;
+    self.url = [NSURL URLWithString:urlstring];
+    [self.momentWebView loadRequest:[NSURLRequest requestWithURL:self.url]];
     self.actionsTaken = [[NSMutableArray alloc] initWithArray:@[]];
     return self;
 }
 
--(void)nextURLrequestWithSkip:(NSNumber *)skip{
+/*-(void)nextURLrequests{
 
     [PFCloud callFunctionInBackground:@"getNextURL"
-                       withParameters:@{@"skip" : skip,
-                                        }
+                       withParameters:@{}
                                 block:^(NSString *result, NSError *error) {
                                     if (!error) {
-                                        //the result is the objectID
+                                        //the result is the objectIDs (3x)
                                         NSLog(@"Retrieved objectId: %@",result);
-                                        //self.url = [NSURL URLWithString:result];
-                                        PFQuery * getMoment = [PFQuery queryWithClassName:@"Moment"];
-                                        [getMoment getObjectInBackgroundWithId:result block:^(PFObject *object, NSError *error) {
-                                            self.pfObject=object;
-                                            self.url = [NSURL URLWithString:result];
-                                            [self.momentWebView loadRequest:[NSURLRequest requestWithURL:self.url]];
-                                        }];
+                                        
+                                        NSArray *  resultArray = [result componentsSeparatedByString:@","];
+                                        
+                                        for (NSString * object in resultArray){
+                                            PFQuery * getMoment = [PFQuery queryWithClassName:@"Moment"];
+                                            [getMoment getObjectInBackgroundWithId:result block:^(PFObject *object, NSError *error) {
+                                                MomentObject * newObject = [
+                                                self.pfObject=object;
+                                                self.url = [NSURL URLWithString:result];
+                                                [self.momentWebView loadRequest:[NSURLRequest requestWithURL:self.url]];
+                                            }];
+                                        }
                                     }
                                     else{
                                         [self grabAnyUrl:skip];
                                     }
                                 }];
     
-}
--(void)grabAnyUrl:(NSNumber *)skip{
+}*/
+-(void)grabAnyUrl{
     [PFCloud callFunctionInBackground:@"getAnyURL"
-                       withParameters:@{@"skip" : skip,
-                                        }
+                       withParameters:@{}
                                 block:^(NSString *result, NSError *error) {
                                     if (!error) {
                                         //the result is the objectID
@@ -107,12 +127,13 @@
 -(void)webViewDidStartLoad:(UIWebView *)webView{
     if (self.loadingCount==0){
         //add the activity indicator
-        UIActivityIndicatorView * loadingIndicator = [[UIActivityIndicatorView alloc] initWithFrame:CGRectMake(self.momentWebView.frame.size.width/2-20, 240, 40, 40)];
-        loadingIndicator.backgroundColor=[UIColor darkGrayColor];
-        loadingIndicator.activityIndicatorViewStyle=UIActivityIndicatorViewStyleWhite;
+        UIActivityIndicatorView * loadingIndicator = [[UIActivityIndicatorView alloc] initWithFrame:CGRectMake(self.momentWebView.frame.size.width/2-40, 240, 80, 80)];
+        loadingIndicator.backgroundColor=[UIColor lightGrayColor];
+        loadingIndicator.activityIndicatorViewStyle=UIActivityIndicatorViewStyleWhiteLarge;
         loadingIndicator.layer.cornerRadius=8;
         loadingIndicator.tag=67;
         [self.momentWebView addSubview:loadingIndicator];
+        [loadingIndicator startAnimating];
     }
     self.loadingCount++;
 }
@@ -121,7 +142,7 @@
 }
 -(void)webViewDidFinishLoad:(UIWebView *)webView{
     self.loadingCount--;
-    
+    NSLog(@"Finished loading webview: %@",self.url.absoluteString);
     if (self.loadingCount==0){
         //remove the activity indicator
         [[self.momentWebView viewWithTag:67] removeFromSuperview];

@@ -14,7 +14,7 @@
 @class DetailsViewController;
 @class MomentObject;
 
-@interface MainViewController : UIViewController <UIWebViewDelegate,NTCustomViewDelegate>{
+@interface MainViewController : UIViewController <UIWebViewDelegate,NTCustomViewDelegate,UIAlertViewDelegate>{
     CGRect momentFrame;
 }
 

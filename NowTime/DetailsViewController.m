@@ -14,7 +14,7 @@
 
 @implementation DetailsViewController
 
-@synthesize urlLabel;
+@synthesize urlLabel,uploadButton, clipboardButton;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -34,6 +34,8 @@
     [self.view addGestureRecognizer:swipeD];
     
     originalFrame=self.containerView.frame;
+    uploadButton.layer.cornerRadius=8;
+    clipboardButton.layer.cornerRadius=8;
     [self animateViewUp:NO];
 
 }
@@ -56,6 +58,7 @@
 
 - (IBAction)uploadAction:(id)sender {
     UploadViewController * uvc = [self.storyboard instantiateViewControllerWithIdentifier:@"uploader"];
+    uvc.mainViewController=self.mainViewController;
     [self.mainViewController.navigationController pushViewController:uvc animated:YES];
 }
 
@@ -63,10 +66,11 @@
     if([SLComposeViewController isAvailableForServiceType:SLServiceTypeFacebook])
     {
         NSLog(@"Ready to Facebook.");
+        [self.currentMoment.pfObject fetchIfNeeded];
         SLComposeViewController *fbComposer = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeFacebook];
-        [fbComposer setInitialText:@"Make sure you get the best deal on your next rideshare with MyFare."];
-        [fbComposer addImage:[UIImage imageNamed:@"LyftOrUber.png"]];
-        [fbComposer addURL:[NSURL URLWithString:@"https://itunes.apple.com/us/app/myfare/id848923129?mt=8"]];
+        [fbComposer setInitialText:self.currentMoment.pfObject[@"headline"]];
+        [fbComposer addImage:[UIImage imageNamed:@"icon1_1024"]];
+        [fbComposer addURL:self.currentMoment.url];
         fbComposer.completionHandler = ^(SLComposeViewControllerResult result){
             if(result == SLComposeViewControllerResultDone){
                 NSLog(@"Facebooked.");
@@ -89,6 +93,34 @@
 }
 
 - (IBAction)twShareAction:(id)sender {
+    if([SLComposeViewController isAvailableForServiceType:SLServiceTypeTwitter])
+    {
+        NSLog(@"Ready to  Tweet.");
+        [self.currentMoment.pfObject fetchIfNeeded];
+        SLComposeViewController *fbComposer = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter];
+        [fbComposer setInitialText:self.currentMoment.pfObject[@"headline"]];
+        [fbComposer addImage:[UIImage imageNamed:@"icon1_1024"]];
+        [fbComposer addURL:self.currentMoment.url];
+        fbComposer.completionHandler = ^(SLComposeViewControllerResult result){
+            if(result == SLComposeViewControllerResultDone){
+                NSLog(@"tweeted.");
+                [self animateViewUp:NO];
+                [self.currentMoment.actionsTaken addObject:kTwitterShare];
+                
+            } else if(result == SLComposeViewControllerResultCancelled) {
+                NSLog(@"Cancelled.");
+            }
+        };
+        [self presentViewController:fbComposer animated:YES completion:nil];
+    }else {
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Oops"
+                                                        message:@"You can't tweet right now, make sure your device has an internet connection and you have at least one Facebook account setup"
+                                                       delegate:nil
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil];
+        [alert show];
+    }
+
 }
 
 - (IBAction)googShareAction:(id)sender {

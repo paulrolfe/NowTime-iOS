@@ -28,9 +28,9 @@
     
     //load an array of moments
     momentQueue = [[NSMutableArray alloc] init];
-    for (int i = 0;i<3;i++){
+    for (int i = 0;i<5;i++){
         //[self performSelector:@selector(loadNewMoment) withObject:nil afterDelay:i];
-        [self loadNewMomentWithSkip:[NSNumber numberWithInt:i]];
+        [self loadNewMoment];
         NSLog(@"Loaded moment %d",i);
     }
     momentFrame=contentContainer.frame;
@@ -41,7 +41,8 @@
     
     self.contentContainer.backAllowed=NO;
     self.lastButtonView.enabled=NO;
-
+    
+    //Hide the status bar.
     if ([self respondsToSelector:@selector(setNeedsStatusBarAppearanceUpdate)]) {
         // iOS 7
         [self performSelector:@selector(setNeedsStatusBarAppearanceUpdate)];
@@ -49,6 +50,10 @@
         // iOS 6
         [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
     }
+
+}
+-(BOOL)canBecomeFirstResponder{
+    return YES;
 }
 -(void)viewWillAppear:(BOOL)animated{
 
@@ -64,16 +69,18 @@
     return YES;
 }
 
--(void) loadNewMomentWithSkip:(NSNumber *)skip{
+-(void) loadNewMoment{
     MomentObject * momentGetter = [[MomentObject alloc] init];
-    [momentQueue addObject: [momentGetter fetchNewObjectWithSkip:skip]];
+    [momentQueue addObject: [momentGetter fetchNewObject]];
 }
 -(void) setCurrentMoment:(MomentObject *)currentMoment{
+    
     //end the timer on the current object.
     [self.currentMoment pauseTimer];
     
     //make the new object current.
     _currentMoment=currentMoment;
+    contentContainer.webview=self.currentMoment.momentWebView;
     detailsController.currentMoment=self.currentMoment;
 
     
@@ -86,6 +93,19 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event
+{
+    if (motion == UIEventSubtypeMotionShake)
+    {
+        [self restartSession];
+    } 
+}
+-(IBAction)restartSession
+{
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Reset?" message:@"If you want us to forget you what you've seen so far click Reset." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Reset",nil];
+    alertView.tag=1;
+    [alertView show];
+}
 #pragma mark - custom view delegate
 -(void)customViewReadyForNextMoment{
     
@@ -95,13 +115,12 @@
         [(MomentObject *)momentQueue[0] sendFeedback];
         [momentQueue removeObjectAtIndex:0];
         //load new moment into index 5. (the 4th moment to be shown next)
-        [self loadNewMomentWithSkip:[NSNumber numberWithInt:0]];
+        [self loadNewMoment];
     }
     if (self.contentContainer.backAllowed!=YES) //if we're on index 0...
         self.currentMoment = momentQueue[1];
     NSLog(@"New url is: %@",self.currentMoment.url);
     
-    contentContainer.webview=self.currentMoment.momentWebView;
     contentContainer.nextWebview=[(MomentObject *)momentQueue[2] momentWebView];
     
     self.contentContainer.backAllowed=YES;
@@ -113,26 +132,26 @@
     self.currentMoment = momentQueue[0];
     NSLog(@"Old url is: %@",self.currentMoment.url);
     
-    contentContainer.webview=self.currentMoment.momentWebView;
+    contentContainer.nextWebview=[(MomentObject *)momentQueue[1] momentWebView];
     
     self.contentContainer.backAllowed=NO;
     self.lastButtonView.enabled=NO;
 }
 -(void)customViewWasTapped{
+    //only using the tap to bring down the menu for now.
     if (detailsContainer.hidden==YES){
         detailsContainer.hidden=NO;
         detailsController.currentMoment=self.currentMoment;
         [detailsController animateViewUp:YES];
     }
-    else{
+    else
         [detailsController animateViewUp:NO];
-    }
 }
--(void)customViewPannedToLeft{ //Show the next moment underneath
-    if(self.contentContainer.backAllowed){
+-(void)customViewPannedToLeft{
+    if(self.contentContainer.backAllowed){ //Show the NEXT moment underneath (index 2)
         contentContainer.nextWebview=[(MomentObject *)momentQueue[2] momentWebView];
     }
-    else{
+    else{ //show the moment you just went back FROM (index 1)
         contentContainer.nextWebview=[(MomentObject *)momentQueue[1] momentWebView];
 
     }
@@ -148,11 +167,15 @@
 }
 
 - (IBAction)lastButton:(id)sender {
+    [self customViewPannedToRight];
     [self.contentContainer fadeawayWebView:contentContainer.webview toNext:NO];
 }
 
 - (IBAction)infoButton:(id)sender {
     [self customViewWasTapped];
+}
+-(void)dismissContainer{
+    [detailsController animateViewUp:NO];
 }
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
@@ -162,6 +185,19 @@
         self.detailsController.mainViewController=self;
 
         [self.detailsController setContainerView:self.detailsContainer];
+  
     }
+}
+-(void)alertView:(UIAlertView *)alertView willDismissWithButtonIndex:(NSInteger)buttonIndex{
+    if (buttonIndex==1 && alertView.tag==1){//They want a reset.
+        [self resetUserSession];
+    }
+}
+-(void) resetUserSession{
+    //For now, we just erase their viewedMoments Relation.
+    [PFUser logOut];
+    [PFUser enableAutomaticUser];
+    [[PFUser currentUser] saveInBackground];
+    
 }
 @end

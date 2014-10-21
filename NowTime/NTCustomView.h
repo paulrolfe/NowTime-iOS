@@ -22,7 +22,7 @@
 /** The object that acts as delegate to the custom view
  
  @abstract The custom view delegate receives things like when a gesture finishes.
- @discussion The delegate must adopt the \p NTCustomViewDelegate protocol. The delegate is not retained.*/
+ @discussion The delegate must adopt the NTCustomViewDelegate protocol. The delegate is not retained.*/
 @property (nonatomic, assign) IBOutlet id <NTCustomViewDelegate> delegate;
 
 @property (weak, nonatomic) UIWebView * webview;
